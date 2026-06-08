@@ -1,0 +1,75 @@
+import numpy as np
+
+def modular_inverse_matrix(matrix, modulus):
+    det = int(np.round(np.linalg.det(matrix)))
+    det = det % modulus
+    
+    det_inv = -1
+    for i in range(1, modulus):
+        if (det * i) % modulus == 1:
+            det_inv = i
+            break
+            
+    if det_inv == -1:
+        raise ValueError("The key matrix is not invertible under the given modulus. Choose a different key.")
+        
+    adjugate = np.array([[matrix[1][1], -matrix[0][1]], 
+                          [-matrix[1][0], matrix[0][0]]])
+    
+    inverse_matrix = (det_inv * adjugate) % modulus
+    return inverse_matrix.astype(int)
+
+def text_to_vector(text, block_size):
+    text = "".join([c.upper() for c in text if c.isalpha()])
+    
+    while len(text) % block_size != 0:
+        text += 'X'
+        
+    return [ord(char) - 65 for char in text]
+
+def vector_to_text(vector):
+    return "".join([chr(num + 65) for num in vector])
+
+def process_hill_cipher(vector, key_matrix, modulus):
+    result_vector = []
+    block_size = len(key_matrix)
+    
+    for i in range(0, len(vector), block_size):
+        block = np.array(vector[i:i+block_size])
+        transformed_block = np.dot(key_matrix, block) % modulus
+        result_vector.extend(transformed_block)
+        
+    return result_vector
+
+def main():
+    print("--- Hill Cipher Program (2x2 Matrix) ---")
+    
+    key_matrix = np.array([[5, 8], 
+                           [17, 3]])
+    
+    print("Using Key Matrix:")
+    print(key_matrix)
+    
+    plaintext = input("\nEnter the plaintext: ")
+    modulus = 26
+    block_size = 2
+    
+    plain_vector = text_to_vector(plaintext, block_size)
+    padded_plaintext = vector_to_text(plain_vector)
+    print(f"\n[+] Padded Plaintext:       {padded_plaintext}")
+    
+    cipher_vector = process_hill_cipher(plain_vector, key_matrix, modulus)
+    ciphertext = vector_to_text(cipher_vector)
+    print(f"[+] Encrypted Ciphertext:   {ciphertext}")
+    
+    try:
+        inverse_key_matrix = modular_inverse_matrix(key_matrix, modulus)
+        decrypted_vector = process_hill_cipher(cipher_vector, inverse_key_matrix, modulus)
+        recovered_text = vector_to_text(decrypted_vector)
+        print(f"[+] Recovered Plaintext:    {recovered_text}")
+    except ValueError as e:
+        print(f"[!] Error: {e}")
+
+if __name__ == "__main__":
+    main()
+    
